@@ -1,16 +1,142 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <mvc:View xmlns:mvc="sap.ui.core.mvc"
-  xmlns="sap.m"
-  xmlns:layout="sap.ui.layout"
-  xmlns:form="sap.ui.layout.form"
-  xmlns:core="sap.ui.core"
-  xmlns:richtexteditor="sap.ui.richtexteditor"
-  xmlns:viz="sap.viz.ui5"
-  controllerName="preview.app.controller.SalesOrderView"
-  displayBlock="true">
-  <Page title="SalesOrderView" enableScrolling="true">
-    <content>
-      <Title id="title_qpk1a6ay" text="SalesOrderView"/>
-    </content>
-  </Page>
+	xmlns="sap.m"
+	xmlns:layout="sap.ui.layout"
+	xmlns:form="sap.ui.layout.form"
+	xmlns:core="sap.ui.core"
+	controllerName="converted.salesorderview.controller.SalesOrderView"
+	displayBlock="true"
+          xmlns:commons="sap.ui.commons">
+	<Page title="Sales Order Overview" enableScrolling="true">
+		<content>
+			<VBox>
+				<form:SimpleForm id="salesOrderHeaderForm" labelSpanL="3" labelSpanM="3" adjustLabelSpan="false"
+					editable="false">
+					<form:content>
+						<Label text="Sales Order ID:" />
+						<Input value="{orders>/SalesOrderID}" editable="false" />
+
+						<Label text="SO Lifecycle Status:" />
+						<Input value="{orders>/SOLifecycleStatus}" editable="false" />
+
+						<Label text="SO Confirmation Status:" />
+						<Input value="{orders>/SOConfirmationStatus}" editable="false" />
+
+						<Label text="SO Ordering Status:" />
+						<Input value="{orders>/SOOrderingStatus}" editable="false" />
+
+						<Label text="Business Partner ID:" />
+						<Input value="{orders>/BusinessPartnerID}" editable="false" />
+					</form:content>
+				</form:SimpleForm>
+
+				<form:SimpleForm id="salesOrderSummaryForm" labelSpanL="3" labelSpanM="3" adjustLabelSpan="false"
+					editable="false">
+					<form:content>
+						<Label text="Total Gross Amount:" />
+						<Input value="{orders>/TotalGrossAmount}" editable="false" />
+
+						<Label text="Total Net Amount:" />
+						<Input value="{orders>/TotalNetAmount}" editable="false" />
+
+						<Label text="Total Tax Amount:" />
+						<Input value="{orders>/TotalTaxAmount}" editable="false" />
+
+						<Label text="Opportunity ID:" />
+						<Input value="{orders>/OpportunityID}" editable="false" />
+
+						<Label text="Company Name:" />
+						<Input value="{orders>/CompanyName}" editable="false" />
+					</form:content>
+				</form:SimpleForm>
+
+				<Title text="Sales Order Items" />
+				<Table id="salesOrderItemsTable" items="{orders>/items}" >
+					<columns>
+						<Column>
+							<header>
+								<Text text="Actions" />
+							</header>
+						</Column>
+						<Column>
+							<header>
+								<Text text="Sales Order Item Position" />
+							</header>
+						</Column>
+						<Column>
+							<header>
+								<Text text="Total Gross Amount" />
+							</header>
+						</Column>
+						<Column>
+							<header>
+								<Text text="Total Net Amount" />
+							</header>
+						</Column>
+						<Column>
+							<header>
+								<Text text="Total Tax Amount" />
+							</header>
+						</Column>
+						<Column>
+							<header>
+								<Text text="ISO Currency Code" />
+							</header>
+						</Column>
+						<Column>
+							<header>
+								<Text text="SO Item ATP Status" />
+							</header>
+						</Column>
+						<Column>
+							<header>
+								<Text text="Product ID" />
+							</header>
+						</Column>
+						<Column>
+							<header>
+								<Text text="Product Name" />
+							</header>
+						</Column>
+						<Column>
+							<header>
+								<Text text="Product Description" />
+							</header>
+						</Column>
+					</columns>
+					<items>
+						<ColumnListItem>
+							<cells>
+								<Button text="Details" press="onItemDetailsPress" />
+								<Text text="{SalesOrderItemPosition}" />
+								<Text text="{TotalGrossAmount}" />
+								<Text text="{TotalNetAmount}" />
+								<Text text="{TotalTaxAmount}" />
+								<Text text="{ISOCurrencyCode}" />
+								<Text text="{SOItemATPStatus}" />
+								<Text text="{ProductID}" />
+								<Text text="{ProductName}" />
+								<Text text="{ProductDescription}" />
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+
+				<HBox>
+					<Button text="Export to CSV" press="onExportToCSV" />
+					<Button text="Export to Excel" press="onExportToExcel" />
+					<Input placeholder="Search..." liveChange="onSearch" />
+				</HBox>
+			</VBox>
+		</content>
+		<footer>
+			<Bar>
+				<contentLeft>
+					<Button text="Back" press="onBackPress" />
+				</contentLeft>
+				<contentRight>
+					<Button text="Next" press="onNextPress" />
+				</contentRight>
+			</Bar>
+		</footer>
+	</Page>
 </mvc:View>
