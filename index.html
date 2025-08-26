@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAPUI5 Conversion Preview - SalesOrderView</title>
+  
+  <!-- Enhanced library support files from dedicated server -->
+  <!-- Use PM2-managed dedicated library server if available, fallback to relative paths -->
+  <script>
+    // Configuration for library loading
+    window.UI5LibConfig = {
+      useLibraryServer: true,
+      libraryServerUrl: '/api/xgendynpro/libraries',
+      jobId: 'default',
+      fallbackToRelative: true
+    };
+  </script>
+  <script src="/api/xgendynpro/libraries/ui5-bootstrap.js" 
+          onerror="document.write('<script src=\'./webapp/libraries/ui5-bootstrap.js\'><\/script>')"></script>
+  <script src="/api/xgendynpro/libraries/LibraryLoader.js"
+          onerror="document.write('<script src=\'./webapp/libraries/LibraryLoader.js\'><\/script>')"></script>
+  <script src="/api/xgendynpro/libraries/ui5-module-loader.js"
+          onerror="document.write('<script src=\'./webapp/libraries/ui5-module-loader.js\'><\/script>')"></script>
+  
+  <!-- Load the OpenUI5 from local resources -->
+  <script id="sap-ui-bootstrap"
+    src="/api/xgendynpro/preview/resources/sap-ui-core.js"
+    data-sap-ui-theme="sap_fiori_3"
+    data-sap-ui-resourceroots='{
+      "converted.salesorderview": "./webapp",
+      "converted.fallback": "./webapp"
+    }'
+    data-sap-ui-oninit="module:converted.salesorderview/index"
+    data-sap-ui-compatVersion="edge"
+    data-sap-ui-async="true"
+    data-sap-ui-frameOptions="trusted"
+    data-sap-ui-libs="sap.m,sap.ui.layout,sap.ui.core">
+  </script>
+  
+  <style>
+    body {
+      font-family: 'Segoe UI', 'Arial', Helvetica, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #333;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .app-header {
+      background-color: #0854a0;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1.5rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      z-index: 100;
+    }
+    .app-header h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 500;
+    }
+    .app-header .actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+    .app-header .timestamp {
+      font-size: 0.875rem;
+      opacity: 0.8;
+    }
+    .content-area {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    .sidebar {
+      width: 300px;
+      background-color: #f5f5f5;
+      border-right: 1px solid #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .sidebar-tabs {
+      display: flex;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .sidebar-tab {
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      flex: 1;
+      text-align: center;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .sidebar-tab.active {
+      border-bottom-color: #0854a0;
+      background-color: white;
+      font-weight: 500;
+    }
+    .sidebar-tab:hover:not(.active) {
+      background-color: #ececec;
+    }
+    .sidebar-content {
+      flex: 1;
+      overflow: auto;
+      display: none;
+      padding: 1rem;
+    }
+    .sidebar-content.active {
+      display: block;
+    }
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .preview-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    .ui5-app-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .fallback-preview {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background-color: white;
+      font-family: '72', 'Segoe UI', 'Arial', sans-serif;
+    }
+    .status-bar {
+      background-color: #f5f5f5;
+      border-top: 1px solid #e0e0e0;
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.875rem;
+      color: #666;
+    }
+    #error-message {
+      padding: 0.75rem 1rem;
+      background-color: #fff8f8;
+      color: #a00;
+      border-top: 1px solid #ffebeb;
+      font-size: 0.875rem;
+      display: none;
+    }
+    .success-icon {
+      color: #2ecc71;
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+    }
+    .code-viewer {
+      background-color: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 4px;
+      padding: 1rem;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.875rem;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      line-height: 1.5;
+      tab-size: 2;
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.25rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      color: #333;
+    }
+    .file-tree {
+      padding-left: 0.5rem;
+    }
+    .file-tree ul {
+      list-style-type: none;
+      padding-left: 1.25rem;
+    }
+    .file-tree li {
+      margin: 0.375rem 0;
+      font-size: 0.875rem;
+    }
+    .file-tree .folder {
+      color: #0078d4;
+      cursor: pointer;
+    }
+    .file-tree .file {
+      color: #333;
+    }
+    .file-tree .folder:before {
+      content: "📁 ";
+    }
+    .file-tree .file:before {
+      content: "📄 ";
+    }
+    .button {
+      padding: 0.5rem 0.75rem;
+      background-color: #0854a0;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      transition: background-color 0.2s;
+    }
+    .button:hover {
+      background-color: #06407c;
+    }
+    .button.secondary {
+      background-color: transparent;
+      color: #0854a0;
+      border: 1px solid #0854a0;
+    }
+    .button.secondary:hover {
+      background-color: #f0f7ff;
+    }
+    .tab-description {
+      margin-bottom: 1rem;
+      line-height: 1.5;
+      font-size: 0.875rem;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-header">
+    <h1>SAPUI5 Conversion - SalesOrderView</h1>
+    <div class="actions">
+      <div class="timestamp" id="header-timestamp"></div>
+      <a href="fullscreen" class="button">Fullscreen Preview</a>
+      <a href="webapp/index.html" target="_blank" class="button secondary">Open in New Tab</a>
+    </div>
+  </div>
+  
+  <div class="content-area">
+    <div class="sidebar">
+      <div class="sidebar-tabs">
+        <div class="sidebar-tab active" onclick="switchTab('code')">Code</div>
+        <div class="sidebar-tab" onclick="switchTab('structure')">Structure</div>
+        <div class="sidebar-tab" onclick="switchTab('info')">Info</div>
+      </div>
+      
+      <div id="code-tab" class="sidebar-content active">
+        <h2>View Definition</h2>
+        <div class="tab-description">The XML view definition for your converted application.</div>
+        <div class="code-viewer xml-viewer">
+&lt;mvc:View
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:f="sap.ui.layout.form"
+  xmlns:core="sap.ui.core"
+  controllerName="converted.salesorderview.controller.SalesOrderView"
+&gt;
+  &lt;Page title="{/title}" showHeader="true"&gt;
+    &lt;content&gt;
+      &lt;VBox class="sapUiContentPadding" justifyContent="Center" alignItems="Center" height="100%"&gt;
+        &lt;items&gt;
+          &lt;Icon src="sap-icon://accept" size="5rem" color="#2ecc71" class="sapUiMediumMarginBottom" /&gt;
+          &lt;Title text="{/title}" level="H1" class="sapUiMediumMarginBottom" /&gt;
+          &lt;Text text="{/message}" class="sapUiMediumMarginBottom" /&gt;
+          &lt;Label text="Generated at: {/timestamp}" /&gt;
+        &lt;/items&gt;
+      &lt;/VBox&gt;
+    &lt;/content&gt;
+  &lt;/Page&gt;
+&lt;/mvc:View&gt;
+        </div>
+        
+        <h2 style="margin-top: 1.5rem;">Controller Code</h2>
+        <div class="tab-description">The JavaScript controller powering your view.</div>
+        <div class="code-viewer js-viewer">
+sap.ui.define([
+  "sap/ui/core/mvc/Controller",
+  "sap/ui/model/json/JSONModel"
+], function(Controller, JSONModel) {
+  "use strict";
+
+  return Controller.extend("converted.salesorderview.controller.SalesOrderView", {
+    onInit: function() {
+      console.log("SAPUI5 Preview App controller initialized");
+      
+      // Set up the model with sample data
+      var oModel = new JSONModel({
+        title: "WebDynpro to SAPUI5 Conversion",
+        message: "This is your converted WebDynpro application. The preview was generated successfully!",
+        timestamp: new Date().toLocaleString()
+      });
+      
+      this.getView().setModel(oModel);
+    }
+  });
+});
+        </div>
+      </div>
+      
+      <div id="structure-tab" class="sidebar-content">
+        <h2>Project Structure</h2>
+        <div class="tab-description">The standard SAPUI5 application structure created during conversion.</div>
+        <div class="file-tree">
+          <ul>
+            <li class="folder">webapp
+              <ul>
+                <li class="folder">view
+                  <ul>
+                    <li class="file">SalesOrderView.view.xml</li>
+                  </ul>
+                </li>
+                <li class="folder">controller
+                  <ul>
+                    <li class="file">SalesOrderView.controller.js</li>
+                  </ul>
+                </li>
+                <li class="folder">i18n
+                  <ul>
+                    <li class="file">i18n.properties</li>
+                  </ul>
+                </li>
+                <li class="file">Component.js</li>
+                <li class="file">manifest.json</li>
+                <li class="file">index.js</li>
+                <li class="file">index.html</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+      
+      <div id="info-tab" class="sidebar-content">
+        <h2>About This Conversion</h2>
+        <div class="tab-description">
+          <p>This SAPUI5 application was automatically generated from a WebDynpro source file. The conversion follows SAPUI5 best practices and produces a standard application structure.</p>
+          <p>The converter has mapped WebDynpro elements to their SAPUI5 equivalents and created the necessary files for a functioning application:</p>
+          <ul>
+            <li>XML Views for the UI</li>
+            <li>JavaScript Controllers for logic</li>
+            <li>Component configuration</li>
+            <li>Application Manifest</li>
+            <li>Internationalization resources</li>
+          </ul>
+          <p>This application is ready to be integrated into an existing SAPUI5 project or used as a starting point for further development.</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="main-content">
+      <div id="error-message"></div>
+      
+      <div class="preview-container">
+        <div id="app-container" class="ui5-app-container"></div>
+        <div id="fallback-preview" class="fallback-preview">
+          <div class="success-icon">✓</div>
+          <h2>WebDynpro to SAPUI5 Conversion</h2>
+          <p>Your application was successfully converted!</p>
+          <div class="simulated-ui5-timestamp">Generated at: <span id="ui5-timestamp"></span></div>
+        </div>
+      </div>
+      
+      <div class="status-bar">
+        <div>Conversion Status: <span style="color: #2ecc71; font-weight: 500;">✓ Complete</span></div>
+        <div id="footer-timestamp"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Set timestamps
+    const now = new Date().toLocaleString();
+    document.getElementById('header-timestamp').textContent = now;
+    document.getElementById('ui5-timestamp').textContent = now;
+    document.getElementById('footer-timestamp').textContent = 'Generated: ' + now;
+    
+    // Tab switching functionality for sidebar
+    function switchTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll('.sidebar-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Remove active class from all tab buttons
+      document.querySelectorAll('.sidebar-tab').forEach(button => {
+        button.classList.remove('active');
+      });
+      
+      // Activate the selected tab
+      document.getElementById(tabName + '-tab').classList.add('active');
+      
+      // Activate the corresponding tab button
+      document.querySelectorAll('.sidebar-tab').forEach(button => {
+        if (button.textContent.toLowerCase() === tabName) {
+          button.classList.add('active');
+        }
+      });
+    }
+    
+    // Enhanced initialization detection and fallback
+    (function checkBootstrap() {
+      if (window.sap && window.sap.ui) {
+        console.log('SAPUI5 detected, checking initialization');
+        
+        if (typeof sap.ui.getCore === 'function') {
+          var core = sap.ui.getCore();
+          console.log('SAPUI5 core available');
+          
+          // Check if core is initialized using the proper method
+          if (typeof core.isInitialized === 'function') {
+            console.log('core.isInitialized is a function');
+            if (core.isInitialized()) {
+              console.info('SAPUI5 core already initialized');
+              console.log('Attaching to SAPUI5 init event');
+              sap.ui.getCore().attachInit(function() {
+                console.info('✅ SAPUI5 core initialization complete');
+                
+                // First ensure the required libraries are loaded
+                console.log('Loading required SAPUI5 components...');
+                sap.ui.require([
+                  "sap/m/App", 
+                  "sap/m/Page", 
+                  "sap/m/VBox", 
+                  "sap/m/Title", 
+                  "sap/m/Text", 
+                  "sap/m/Label", 
+                  "sap/ui/core/Icon"
+                ], function(App, Page, VBox, Title, Text, Label, Icon) {
+                  console.info('✅ All SAPUI5 components loaded successfully');
+                  
+                  try {
+                    // Check if the app-container exists
+                    var container = document.getElementById('app-container');
+                    if (!container) {
+                      console.error('💥 app-container element not found in the DOM!');
+                      // Try to create it
+                      container = document.createElement('div');
+                      container.id = 'app-container';
+                      document.querySelector('.app-content').appendChild(container);
+                      console.info('Created missing app-container element');
+                    } else {
+                      console.log('Found app-container element in the DOM');
+                    }
+                    
+                    // Create a simple UI5 app
+                    console.log('Creating UI5 application components');
+                    var app = new App({
+                      pages: [
+                        new Page({
+                          title: "WebDynpro to SAPUI5 Conversion",
+                          content: [
+                            new VBox({
+                              alignItems: "Center",
+                              justifyContent: "Center",
+                              height: "100%",
+                              items: [
+                                new Icon({
+                                  src: "sap-icon://accept",
+                                  size: "5rem",
+                                  color: "#2ecc71"
+                                }),
+                                new Title({
+                                  text: "WebDynpro to SAPUI5 Conversion"
+                                }),
+                                new Text({
+                                  text: "This is your converted WebDynpro application. The preview was generated successfully!"
+                                }),
+                                new Label({
+                                  text: "Generated at: " + new Date().toLocaleString()
+                                })
+                              ]
+                            })
+                          ]
+                        })
+                      ]
+                    });
+                    
+                    // Place the app in the container
+                    console.log('Placing UI5 app into DOM');
+                    app.placeAt("app-container");
+                    console.info('✅ UI5 app created and placed successfully');
+                  } catch (err) {
+                    console.error('💥 Error creating UI5 App:', err);
+                    document.getElementById('fallback-preview').style.display = 'flex';
+                    document.getElementById('error-message').style.display = 'block';
+                    document.getElementById('error-message').textContent = 'Error creating SAPUI5 app: ' + err.message;
+                  }
+                });
+              });
+            } else {
+              console.log('Waiting for SAPUI5 core initialization');
+              core.attachInit(function() {
+                console.info('SAPUI5 core initialization complete');
+                // Add the same code here to handle initialization
+              });
+            }
+          } else {
+            // Older versions of UI5 don't have isInitialized method
+            console.log('core.isInitialized method not available, using attachInit');
+            core.attachInit(function() {
+              console.info('SAPUI5 core initialization complete (via attachInit)');
+              // Handle initialization for older versions
+            });
+          }
+        } else {
+          console.error('SAPUI5 core functions not available');
+          document.getElementById('fallback-preview').style.display = 'flex';
+          document.getElementById('error-message').style.display = 'block';
+          document.getElementById('error-message').textContent = 'Failed to access SAPUI5 core. Showing simulated preview.';
+        }
+      } else {
+        console.warn('SAPUI5 not yet loaded, waiting...');
+        // Schedule another check
+        setTimeout(checkBootstrap, 500);
+      }
+    })();
+    
+    // Fallback in case UI5 doesn't load correctly after timeout
+    setTimeout(function() {
+      if (!window.sap || !window.sap.ui) {
+        console.error('SAPUI5 failed to load after timeout');
+        document.getElementById('fallback-preview').style.display = 'flex';
+        document.getElementById('error-message').style.display = 'block';
+        document.getElementById('error-message').textContent = 'Failed to load SAPUI5 resources. Showing a simulated preview instead.';
+      }
+    }, 5000);
+  </script>
+</body>
+</html>

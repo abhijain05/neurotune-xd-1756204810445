@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+  controllerName="converted.salesorderview.controller.App"
+  xmlns:mvc="sap.ui.core.mvc"
+  displayBlock="true"
+  xmlns="sap.m">
+  <App id="app" class="appContainer">
+    <!-- Content views will be loaded here via routing -->
+  </App>
+</mvc:View>

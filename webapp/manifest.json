@@ -1,0 +1,101 @@
+{
+  "_version": "1.12.0",
+  "sap.app": {
+    "id": "converted.salesorderview",
+    "type": "application",
+    "i18n": "i18n/i18n.properties",
+    "applicationVersion": {
+      "version": "1.0.0"
+    },
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "sourceTemplate": {
+      "id": "ui5template.basicSAPUI5ApplicationProject",
+      "version": "1.40.12"
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "flexEnabled": false,
+    "rootView": {
+      "viewName": "converted.salesorderview.view.App",
+      "type": "XML",
+      "async": true,
+      "id": "appView"
+    },
+    "dependencies": {
+      "minUI5Version": "1.65.6",
+      "libs": {
+        "sap.ui.core": {},
+        "sap.m": {}
+      }
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "converted.salesorderview.i18n.i18n"
+        }
+      }
+    },
+    "routing": {
+      "config": {
+        "routerClass": "sap.m.routing.Router",
+        "viewType": "XML",
+        "async": true,
+        "viewPath": "converted.salesorderview.view",
+        "controlAggregation": "pages",
+        "controlId": "app",
+        "clearControlAggregation": false
+      },
+      "routes": [
+        {
+          "name": "main",
+          "pattern": "",
+          "target": [
+            "main"
+          ]
+        },
+        {
+          "name": "first",
+          "pattern": "first",
+          "target": [
+            "main"
+          ]
+        },
+        {
+          "name": "second",
+          "pattern": "second",
+          "target": [
+            "second"
+          ]
+        }
+      ],
+      "targets": {
+        "main": {
+          "viewName": "SalesOrderView",
+          "viewLevel": 1,
+          "controlId": "app",
+          "controlAggregation": "pages"
+        },
+        "second": {
+          "viewName": "SecondView",
+          "viewLevel": 1,
+          "controlId": "app",
+          "controlAggregation": "pages"
+        }
+      }
+    }
+  }
+}

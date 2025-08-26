@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAPUI5 Fullscreen - SalesOrderView</title>
+  
+  <!-- Enhanced library support files from dedicated server -->
+  <!-- Use PM2-managed dedicated library server if available, fallback to relative paths -->
+  <script>
+    // Configuration for library loading
+    window.UI5LibConfig = {
+      useLibraryServer: true,
+      libraryServerUrl: '/api/xgendynpro/libraries',
+      jobId: 'default',
+      fallbackToRelative: true
+    };
+  </script>
+  <script src="/api/xgendynpro/libraries/ui5-bootstrap.js" 
+          onerror="document.write('<script src=\'./webapp/libraries/ui5-bootstrap.js\'><\/script>')"></script>
+  <script src="/api/xgendynpro/libraries/LibraryLoader.js"
+          onerror="document.write('<script src=\'./webapp/libraries/LibraryLoader.js\'><\/script>')"></script>
+  <script src="/api/xgendynpro/libraries/ui5-module-loader.js"
+          onerror="document.write('<script src=\'./webapp/libraries/ui5-module-loader.js\'><\/script>')"></script>
+  
+  <!-- Load the OpenUI5 resources -->
+  <script id="sap-ui-bootstrap"
+    src="/api/xgendynpro/preview/resources/sap-ui-core.js"
+    data-sap-ui-theme="sap_fiori_3"
+    data-sap-ui-resourceroots='{
+      "converted.salesorderview": "./webapp/",
+      "converted.fallback": "./webapp/"
+    }'
+    data-sap-ui-onInit="module:converted.salesorderview/index"
+    data-sap-ui-compatVersion="edge"
+    data-sap-ui-async="true"
+    data-sap-ui-frameOptions="trusted"
+    data-sap-ui-libs="sap.m,sap.ui.layout,sap.ui.core">
+  </script>
+  
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    
+    #app-container {
+      height: 100%;
+      width: 100%;
+      position: absolute;
+    }
+    
+    /* Exit button styles */
+    .exit-button {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background-color: rgba(255, 255, 255, 0.8);
+      color: #0854a0;
+      border: 1px solid #0854a0;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      text-decoration: none;
+      cursor: pointer;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    body:hover .exit-button {
+      opacity: 1;
+    }
+    
+    /* Fallback styles if UI5 fails to load */
+    .fallback-ui {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      font-family: '72', 'Segoe UI', 'Arial', sans-serif;
+      color: #333;
+      padding: 2rem;
+      text-align: center;
+    }
+    
+    .fallback-icon {
+      font-size: 5rem;
+      color: #2ecc71;
+      margin-bottom: 2rem;
+    }
+    
+    /* Debug status panel */
+    .debug-status {
+      margin-top: 1rem;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 14px;
+      white-space: pre-wrap;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Exit button -->
+  <a href="./" class="exit-button" title="Exit Fullscreen">Exit Fullscreen</a>
+  
+  <!-- This is where the UI5 app will be rendered -->
+  <div id="app-container"></div>
+  
+  <!-- Fallback UI if SAPUI5 fails to load -->
+  <div id="fallback-ui" class="fallback-ui">
+    <div class="fallback-icon">✓</div>
+    <h1>SalesOrderView Application</h1>
+    <p>Application successfully converted to SAPUI5 format.</p>
+    <p id="fallback-timestamp"></p>
+    <div id="debug-status" class="debug-status"></div>
+  </div>
+  
+  <script>
+    // Display debug information
+    function updateDebugInfo(status) {
+      var debugEl = document.getElementById('debug-status');
+      if (debugEl) {
+        debugEl.style.display = 'block';
+        debugEl.textContent += status + '\n';
+      }
+    }
+    
+    // Enhanced initialization detection and fallback
+    (function checkBootstrap() {
+      if (window.sap && window.sap.ui) {
+        updateDebugInfo('SAPUI5 detected, checking initialization');
+        
+        if (typeof sap.ui.getCore === 'function') {
+          var core = sap.ui.getCore();
+          updateDebugInfo('SAPUI5 core available');
+          
+          // Check if core is initialized using the proper method
+          if (typeof core.isInitialized === 'function') {
+            updateDebugInfo('core.isInitialized is a function');
+            if (core.isInitialized()) {
+              updateDebugInfo('SAPUI5 core already initialized');
+            } else {
+              updateDebugInfo('Waiting for SAPUI5 core initialization');
+              core.attachInit(function() {
+                updateDebugInfo('SAPUI5 core initialization complete');
+              });
+            }
+          } else {
+            // Older versions of UI5 don't have isInitialized method
+            updateDebugInfo('core.isInitialized method not available, using attachInit');
+            core.attachInit(function() {
+              updateDebugInfo('SAPUI5 core initialization complete (via attachInit)');
+            });
+          }
+        } else {
+          updateDebugInfo('Error: SAPUI5 core functions not available');
+        }
+      } else {
+        updateDebugInfo('SAPUI5 not yet loaded, waiting...');
+        // Schedule another check
+        setTimeout(checkBootstrap, 500);
+      }
+    })();
+    
+    // Fallback in case UI5 doesn't load correctly after timeout
+    setTimeout(function() {
+      if (!window.sap || !window.sap.ui) {
+        updateDebugInfo('Error: SAPUI5 failed to load after timeout');
+        document.getElementById('fallback-ui').style.display = 'flex';
+      }
+      
+      // Set timestamp
+      document.getElementById('fallback-timestamp').textContent = 'Generated: ' + new Date().toLocaleString();
+    }, 5000);
+  </script>
+</body>
+</html>

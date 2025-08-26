@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAPUI5 Application - SalesOrderView</title>
+  
+  <!-- Enhanced debugging -->
+  <script>
+    // Start logging as early as possible
+    console.log("Page load started - " + new Date().toISOString());
+    
+    // Improved debug display
+    function showDebugMessage(message, isError) {
+      console.log(message);
+      
+      // Create a div to display the message
+      var debugContainer = document.getElementById('debug-messages');
+      if (!debugContainer) {
+        debugContainer = document.createElement('div');
+        debugContainer.id = 'debug-messages';
+        debugContainer.style.position = 'fixed';
+        debugContainer.style.bottom = '10px';
+        debugContainer.style.right = '10px';
+        debugContainer.style.maxWidth = '400px';
+        debugContainer.style.maxHeight = '200px';
+        debugContainer.style.overflow = 'auto';
+        debugContainer.style.backgroundColor = 'rgba(0,0,0,0.8)';
+        debugContainer.style.color = 'white';
+        debugContainer.style.padding = '10px';
+        debugContainer.style.borderRadius = '5px';
+        debugContainer.style.fontFamily = 'monospace';
+        debugContainer.style.fontSize = '12px';
+        debugContainer.style.zIndex = '9999';
+        document.body.appendChild(debugContainer);
+      }
+      
+      var msgElement = document.createElement('div');
+      msgElement.style.borderBottom = '1px solid #555';
+      msgElement.style.padding = '4px 0';
+      msgElement.style.color = isError ? '#ff6b6b' : '#a5d8ff';
+      msgElement.textContent = message;
+      debugContainer.appendChild(msgElement);
+      
+      // Scroll to bottom
+      debugContainer.scrollTop = debugContainer.scrollHeight;
+    }
+    
+    // Create a polyfill for resource loading mechanism
+    (function() {
+      showDebugMessage("Setting up SAPUI5 polyfills");
+      
+      if (typeof window.sap === 'undefined') {
+        window.sap = {};
+        showDebugMessage("Created sap namespace");
+      }
+      if (typeof window.sap.ui === 'undefined') {
+        window.sap.ui = {};
+        showDebugMessage("Created sap.ui namespace");
+      }
+      
+      // Add resource loading methods if they don't exist
+      window.sap.ui.resource = window.sap.ui.resource || function(lib, path) {
+        var libPath = lib.replace(/\./g, '/');
+        var url = "/api/xgendynpro/preview/resources/" + libPath + "/" + path;
+        showDebugMessage("Resource: " + lib + " - " + path + " → " + url);
+        return url;
+      };
+      
+      // Add require function
+      window.sap.ui.require = window.sap.ui.require || function() {
+        showDebugMessage("sap.ui.require polyfill called: " + Array.prototype.slice.call(arguments).join(', '));
+        // Simple polyfill
+        if (arguments.length > 0 && typeof arguments[arguments.length-1] === 'function') {
+          var callback = arguments[arguments.length-1];
+          setTimeout(callback, 0);
+        }
+      };
+      
+      // Add toUrl function to require
+      if (window.sap.ui.require && typeof window.sap.ui.require.toUrl !== 'function') {
+        window.sap.ui.require.toUrl = function(moduleName) {
+          // Convert module paths to URLs
+          var url = "/api/xgendynpro/preview/resources/" + moduleName.replace(/\./g, '/');
+          showDebugMessage("toUrl: " + moduleName + " → " + url);
+          return url;
+        };
+        showDebugMessage("Added toUrl polyfill for resource loading");
+      }
+      
+      // Improved define function if it doesn't exist
+      if (typeof window.sap.ui.define !== 'function') {
+        window.sap.ui.define = function(modules, factory) {
+          showDebugMessage("sap.ui.define polyfill called");
+          if (typeof factory === 'function') {
+            var mockModules = Array.isArray(modules) ? modules.map(function() { return {}; }) : [];
+            setTimeout(function() {
+              try {
+                factory.apply(null, mockModules);
+              } catch (e) {
+                showDebugMessage("Error in define factory: " + e.message, true);
+              }
+            }, 0);
+          }
+          return {};
+        };
+        showDebugMessage("Added define polyfill");
+      }
+      
+      // Global configuration
+      window["sap-ui-config"] = {
+        bindingSyntax: "complex",
+        compatVersion: "edge",
+        async: true,
+        resourceRoots: {
+          "converted.salesorderview": "./",
+          "converted": "./",
+          "sap.m": "/api/xgendynpro/preview/resources/sap/m",
+          "sap.ui.core": "/api/xgendynpro/preview/resources/sap/ui/core",
+          "sap.ui.layout": "/api/xgendynpro/preview/resources/sap/ui/layout",
+          "sap.ui.table": "/api/xgendynpro/preview/resources/sap/ui/table",
+          "sap.ui.unified": "/api/xgendynpro/preview/resources/sap/ui/unified"
+        },
+        theme: "sap_fiori_3",
+        libs: "sap.m,sap.ui.layout,sap.ui.core",
+        frameOptions: "trusted",
+        logLevel: "DEBUG"
+      };
+      
+      showDebugMessage("SAPUI5 config setup complete");
+    })();
+    
+    // Global error handler
+    window.addEventListener('error', function(event) {
+      var errorMsg = event.error ? (event.error.stack || event.error.message) : event.message;
+      showDebugMessage("ERROR: " + errorMsg, true);
+      console.error('Global error caught:', event.error || event.message);
+    });
+    
+    // Track script loading
+    window.loadedScripts = [];
+    var originalCreateElement = document.createElement;
+    document.createElement = function(tagName) {
+      var element = originalCreateElement.call(document, tagName);
+      if (tagName.toLowerCase() === 'script') {
+        element.addEventListener('load', function() {
+          if (element.src) {
+            window.loadedScripts.push(element.src);
+            showDebugMessage("Script loaded: " + element.src.split('/').pop());
+          }
+        });
+        element.addEventListener('error', function() {
+          if (element.src) {
+            showDebugMessage("Script failed: " + element.src.split('/').pop(), true);
+          }
+        });
+      }
+      return element;
+    };
+  </script>
+  
+  <!-- Load the OpenUI5 resources with enhanced resource configuration -->
+  <!-- Enhanced library support files (with fixed relative paths) -->
+  <script>
+    // Configuration for library loading (in webapp context)
+    window.UI5LibConfig = {
+      useLibraryServer: false,
+      fallbackToRelative: true
+    };
+  </script>
+  <script src="./libraries/ui5-bootstrap.js"></script>
+  <script src="./libraries/LibraryLoader.js"></script>
+  <script src="./libraries/ui5-module-loader.js"></script>
+  
+  <script id="sap-ui-bootstrap"
+    src="/api/xgendynpro/preview/resources/sap-ui-core.js"
+    data-sap-ui-theme="sap_fiori_3"
+    data-sap-ui-resourceroots='{
+      "converted.salesorderview": "./",
+      "converted": "./",
+      "converted.fallback": "./",
+      "sap.m": "/api/xgendynpro/preview/resources/sap/m",
+      "sap.ui.core": "/api/xgendynpro/preview/resources/sap/ui/core",
+      "sap.ui.layout": "/api/xgendynpro/preview/resources/sap/ui/layout",
+      "sap.ui.table": "/api/xgendynpro/preview/resources/sap/ui/table",
+      "sap.ui.unified": "/api/xgendynpro/preview/resources/sap/ui/unified"
+    }'
+    data-sap-ui-compatVersion="edge"
+    data-sap-ui-async="true"
+    data-sap-ui-frameOptions="trusted"
+    data-sap-ui-debug="true"
+    data-sap-ui-logLevel="DEBUG"
+    data-sap-ui-xx-bindingSyntax="complex"
+    data-sap-ui-xx-supportedLanguages="en"
+    data-sap-ui-preload="async"
+    data-sap-ui-libs="sap.m,sap.ui.layout,sap.ui.core"
+    onload="onSapUiBootstrapLoaded()">
+  </script>
+  
+  <!-- Additional debugging and bootstrap handling -->
+  <script>
+    // Track when bootstrap is complete
+    function onSapUiBootstrapLoaded() {
+      showDebugMessage("SAP UI bootstrap script loaded");
+      
+      // Check if all required namespaces are available
+      if (!window.sap) {
+        showDebugMessage("ERROR: sap namespace not available after bootstrap", true);
+        return;
+      }
+      
+      if (!window.sap.ui) {
+        showDebugMessage("ERROR: sap.ui namespace not available after bootstrap", true);
+        return;
+      }
+      
+      if (typeof sap.ui.getCore !== 'function') {
+        showDebugMessage("ERROR: sap.ui.getCore not available after bootstrap", true);
+        return;
+      }
+      
+      showDebugMessage("SAP UI bootstrap complete, waiting for initialization");
+      
+      // Add toUrl polyfill to ensure resource loading works
+      if (typeof sap.ui.require === 'function' && typeof sap.ui.require.toUrl !== 'function') {
+        showDebugMessage("Adding toUrl polyfill for resource loading");
+        
+        sap.ui.require.toUrl = function(path) {
+          // Remove .js extension if present
+          var modulePath = path.replace(/\.js$/, "");
+          
+          // Handle special cases
+          if (modulePath.startsWith("sap/") || 
+              modulePath.startsWith("jquery/") || 
+              modulePath.startsWith("ui5loader")) {
+            return "/api/xgendynpro/preview/resources/" + modulePath;
+          }
+          
+          // Application resources
+          return modulePath;
+        };
+      }
+      
+      // Check if core is already initialized
+      var core = sap.ui.getCore();
+      if (typeof core.isInitialized === 'function' && core.isInitialized()) {
+        showDebugMessage("Core is already initialized");
+        window.isUI5Initialized = true;
+      } else {
+        showDebugMessage("Attaching to core init event");
+        // Register for core init event
+        core.attachInit(function() {
+          showDebugMessage("Core init event fired");
+          window.isUI5Initialized = true;
+        });
+      }
+    }
+    
+    // Monitor XMLHttpRequest to detect resource loading failures
+    (function() {
+      var origOpen = XMLHttpRequest.prototype.open;
+      XMLHttpRequest.prototype.open = function() {
+        var url = arguments[1];
+        if (url && typeof url === 'string') {
+          if (url.includes('/resources/') || url.includes('.js') || url.includes('.xml')) {
+            showDebugMessage("XHR Request: " + url.split('/').pop());
+          }
+          
+          this.addEventListener('load', function() {
+            if (this.status >= 400 && (url.includes('/resources/') || url.includes('.js') || url.includes('.xml'))) {
+              showDebugMessage("XHR ERROR: " + url.split('/').pop() + " (" + this.status + ")", true);
+            }
+          });
+          
+          this.addEventListener('error', function() {
+            if (url.includes('/resources/') || url.includes('.js') || url.includes('.xml')) {
+              showDebugMessage("XHR ERROR: " + url.split('/').pop(), true);
+            }
+          });
+        }
+        
+        origOpen.apply(this, arguments);
+      };
+    })();
+    
+    // Add window load event listener
+    window.addEventListener('load', function() {
+      showDebugMessage("Window load event fired");
+      
+      // Try loading index.js manually if not already loaded
+      setTimeout(function() {
+        if (!window.indexJsLoaded) {
+          showDebugMessage("Manually loading index.js");
+          var script = document.createElement('script');
+          script.src = "index.js";
+          script.onload = function() {
+            showDebugMessage("index.js manually loaded");
+          };
+          script.onerror = function() {
+            showDebugMessage("ERROR: Failed to manually load index.js", true);
+          };
+          document.head.appendChild(script);
+        }
+      }, 2000);
+      
+      // Final check for UI5 initialization
+      setTimeout(function() {
+        if (!window.isUI5Initialized) {
+          showDebugMessage("WARNING: UI5 initialization not detected after 5 seconds", true);
+        }
+        
+        // Check if any UI5 controls were created
+        var controls = document.querySelectorAll("[data-sap-ui]");
+        showDebugMessage("UI5 controls in DOM: " + controls.length);
+        
+        if (controls.length === 0) {
+          showDebugMessage("WARNING: No UI5 controls detected in DOM", true);
+        }
+      }, 5000);
+    });
+  </script>
+  
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    
+    #app-container {
+      height: 100%;
+      width: 100%;
+      position: absolute;
+    }
+    
+    /* Placeholder for custom styles */
+    
+    /* Fallback styles if UI5 fails to load */
+    .fallback-ui {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      font-family: '72', 'Segoe UI', 'Arial', sans-serif;
+      color: #333;
+      padding: 2rem;
+      text-align: center;
+    }
+    
+    .fallback-icon {
+      font-size: 5rem;
+      color: #2ecc71;
+      margin-bottom: 2rem;
+    }
+    
+    /* Debug status panel */
+    .debug-status {
+      margin-top: 1rem;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 14px;
+      white-space: pre-wrap;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- This is where the UI5 app will be rendered -->
+  <div id="app-container">
+    <!-- Loading indicator -->
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+      <div style="border: 4px solid #f3f3f3; border-top: 4px solid #0a6ed1; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+      <h3>Loading SalesOrderView...</h3>
+      <p>Please wait while the application initializes</p>
+      
+      <style>
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      </style>
+    </div>
+  </div>
+  
+  <!-- Debug Panel Button -->
+  <div id="debug-button" style="position: fixed; bottom: 20px; right: 20px; width: 40px; height: 40px; background: #0a6ed1; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 9999; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+    <span>🐞</span>
+  </div>
+  
+  <!-- Debug Panel -->
+  <div id="debug-panel" style="display: none; position: fixed; bottom: 70px; right: 20px; width: 350px; max-height: 500px; overflow: auto; background: white; border-radius: 8px; padding: 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.2); z-index: 9999; font-family: monospace; font-size: 12px;">
+    <h3 style="margin-top: 0; color: #0a6ed1;">SAPUI5 Debug Panel</h3>
+    <div id="debug-output" style="white-space: pre-wrap;"></div>
+  </div>
+  
+  <script>
+    // Initialize debug panel
+    document.getElementById('debug-button').addEventListener('click', function() {
+      var panel = document.getElementById('debug-panel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
+    
+    // Add diagnostic tools to debug panel
+    var debugOutput = document.getElementById('debug-output');
+    
+    function updateDebugOutput() {
+      var output = "";
+      
+      // Check SAPUI5 loading status
+      output += "SAPUI5 Debug Info:\n";
+      
+      var info = {
+        sapLoaded: typeof sap !== 'undefined',
+        sapUiLoaded: typeof sap !== 'undefined' && typeof sap.ui !== 'undefined',
+        coreInitialized: false,
+        appContainerFound: !!document.getElementById('app-container'),
+        appContainerVisible: false,
+        childrenCount: 0,
+        resourcesLoaded: true,
+        bootstrapCriteria: document.getElementById('sap-ui-bootstrap') !== null,
+        bootstrapSrc: "",
+        errors: [],
+        timestamp: new Date().toISOString()
+      };
+      
+      // Check bootstrap script source
+      var bootstrap = document.getElementById('sap-ui-bootstrap');
+      if (bootstrap) {
+        info.bootstrapSrc = bootstrap.src;
+      }
+      
+      // Check if app container is visible
+      var appContainer = document.getElementById('app-container');
+      if (appContainer) {
+        var style = window.getComputedStyle(appContainer);
+        info.appContainerVisible = style.display !== 'none' && style.visibility !== 'hidden';
+        info.childrenCount = appContainer.children.length;
+        
+        // Check if app container has any SAPUI5 controls as children
+        var controls = appContainer.querySelectorAll('[data-sap-ui]');
+        if (controls.length === 0 && appContainer.children.length > 0) {
+          info.errors.push("App container has no UI5 controls");
+        }
+        
+        if (info.childrenCount === 0) {
+          info.errors.push("App container has no children");
+        }
+      }
+      
+      // Check SAPUI5 core initialization
+      if (info.sapUiLoaded && typeof sap.ui.getCore === 'function') {
+        var core = sap.ui.getCore();
+        if (typeof core.isInitialized === 'function') {
+          info.coreInitialized = core.isInitialized();
+        }
+      }
+      
+      // Add debug output
+      debugOutput.textContent = JSON.stringify(info, null, 2);
+      
+      // Log it to console too
+      console.log("SAPUI5 Debug Info:", info);
+      
+      // If there are rendering issues, try to force a re-render
+      if (info.coreInitialized && info.appContainerFound && info.appContainerVisible && info.childrenCount === 0) {
+        console.warn("Potential rendering issue detected, trying to force re-render");
+      }
+    }
+    
+    // Update debug panel periodically
+    setInterval(updateDebugOutput, 5000);
+    updateDebugOutput(); // Initial update
+  </script>
+  
+  <!-- Fallback UI if SAPUI5 fails to load -->
+  <div id="fallback-ui" class="fallback-ui">
+    <div class="fallback-icon">✓</div>
+    <h1>SalesOrderView Application</h1>
+    <p>Application successfully converted to SAPUI5 format.</p>
+    <p id="fallback-timestamp"></p>
+    <div id="debug-status" class="debug-status"></div>
+  </div>
+  
+  <script>
+    // Display debug information
+    function updateDebugInfo(status) {
+      var debugEl = document.getElementById('debug-status');
+      if (debugEl) {
+        debugEl.style.display = 'block';
+        debugEl.textContent += status + '\n';
+      }
+    }
+    
+    // Enhanced initialization detection and fallback
+    (function checkBootstrap() {
+      if (window.sap && window.sap.ui) {
+        updateDebugInfo('SAPUI5 detected, checking initialization');
+        
+        if (typeof sap.ui.getCore === 'function') {
+          var core = sap.ui.getCore();
+          updateDebugInfo('SAPUI5 core available');
+          
+          // Check if core is initialized using the proper method
+          if (typeof core.isInitialized === 'function') {
+            updateDebugInfo('core.isInitialized is a function');
+            if (core.isInitialized()) {
+              updateDebugInfo('SAPUI5 core already initialized');
+            } else {
+              updateDebugInfo('Waiting for SAPUI5 core initialization');
+              core.attachInit(function() {
+                updateDebugInfo('SAPUI5 core initialization complete');
+              });
+            }
+          } else {
+            // Older versions of UI5 don't have isInitialized method
+            updateDebugInfo('core.isInitialized method not available, using attachInit');
+            core.attachInit(function() {
+              updateDebugInfo('SAPUI5 core initialization complete (via attachInit)');
+            });
+          }
+        } else {
+          updateDebugInfo('Error: SAPUI5 core functions not available');
+        }
+      } else {
+        updateDebugInfo('SAPUI5 not yet loaded, waiting...');
+        // Schedule another check
+        setTimeout(checkBootstrap, 500);
+      }
+    })();
+    
+    // Fallback in case UI5 doesn't load correctly after timeout
+    setTimeout(function() {
+      if (!window.sap || !window.sap.ui) {
+        updateDebugInfo('Error: SAPUI5 failed to load after timeout');
+        document.getElementById('fallback-ui').style.display = 'flex';
+      }
+      
+      // Set timestamp
+      document.getElementById('fallback-timestamp').textContent = 'Generated: ' + new Date().toLocaleString();
+    }, 5000);
+  </script>
+</body>
+</html>

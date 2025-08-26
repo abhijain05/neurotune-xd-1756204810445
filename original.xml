@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<WebDynpro xmlns="http://www.sap.com/wd/webdynpro">
+  <View name="SalesOrderView">
+    <Title>SalesOrderView</Title>
+    
+  </View>
+  <Controller name="SalesOrderViewController">
+    <Method name="onInitialization">
+      <![CDATA[
+        // Initialize data
+        this.loadData();
+      ]]>
+    </Method>
+    <Method name="loadData">
+      <![CDATA[
+        // Load data for sales order
+        var oModel = this.getView().getModel();
+        oModel.loadData();
+      ]]>
+    </Method>
+    <Method name="onRowSelect">
+      <![CDATA[
+        // Handle row selection in table
+        var selectedIndex = oEvent.getParameter("rowIndex");
+        var selectedData = this.getView().getModel().getData()[selectedIndex];
+        // Process selected data
+      ]]>
+    </Method>
+  </Controller>
+</WebDynpro>
